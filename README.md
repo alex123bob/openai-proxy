@@ -5,7 +5,7 @@ to `https://api.openai.com`. Deploy it on a server that can reach OpenAI, put ng
 (with HTTPS) in front, and point your coding agent's base URL at it.
 
 The client keeps its own OpenAI key and sends it in the `Authorization` header; the
-proxy forwards it untouched and stores no secrets. It never logs headers or bodies.
+proxy forwards it untouched and stores no secrets. It never logs headers; bodies are logged only if you opt in (`LOG_BODIES`).
 
 ## Run
 
@@ -42,6 +42,8 @@ Or with Docker:
 | `PORT` | `8080` | bind port |
 | `UPSTREAM_BASE_URL` | `https://api.openai.com` | where requests are forwarded |
 | `LOG_LEVEL` | `INFO` | diagnostic log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` |
+| `LOG_BODIES` | `off` | `off`, `request`, or `both`: log request (and response) content as separate events |
+| `LOG_BODY_MAX_BYTES` | `8192` | per-body size limit for logged content; longer bodies are cut and flagged `truncated` |
 
 ## Diagnostics and performance
 
@@ -102,7 +104,18 @@ Useful troubleshooting patterns:
 - Growing header latency alongside active requests suggests contention; these
   timings do **not** separately measure DNS, TLS, or connection-pool wait.
 
-Headers, query strings, request/response bodies, upstream URLs, and exception
+`request_finished` also carries `client_ip`, `user_agent`, `content_type`, `request_bytes`,
+`model`, `stream_requested`, `message_count`, `tool_count`, `max_tokens`, `usage` (token
+counts), `finish_reason`, `upstream_request_id`, `retry_after`, `ratelimit`, and a short
+`upstream_error` on failures. Content never appears unless `LOG_BODIES` is set.
+
+With `LOG_BODIES=request|both`, extra `request_body` / `response_body` events (same
+`request_id`) hold the prompt and reply. Values under keys like `api_key`, `token`, and
+`password` are redacted and `sk-…` strings masked, but prompts may still contain anything
+you typed, so protect `proxy.log`. Streaming responses are logged as the reassembled
+`text`, not per chunk. Capture copies bytes as they pass, so streaming is not delayed.
+
+Headers (including `Authorization`), query strings, upstream URLs, and exception
 messages are excluded from diagnostic events. Paths are logged and may contain
 resource IDs, so avoid embedding secrets in paths. Separate nginx access logs have
 their own configuration. Keep `LOG_LEVEL=INFO` for timings; `WARNING` suppresses

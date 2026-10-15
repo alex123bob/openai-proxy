@@ -143,6 +143,10 @@ def create_app(transport=None, upstream=None) -> FastAPI:
             resp.stream = _ShieldedStream(resp.stream)
             metrics["upstream_headers_ms"] = (time.perf_counter() - metrics["started"]) * 1000
             metrics["upstream_status"] = resp.status_code
+            metrics["upstream_request_id"] = resp.headers.get("x-request-id")
+            metrics["retry_after"] = resp.headers.get("retry-after")
+            metrics["ratelimit"] = {k: v for k, v in resp.headers.items()
+                                    if k.lower().startswith("x-ratelimit-")}
         except httpx.HTTPError as exc:
             metrics["outcome"] = "upstream_error"
             metrics["error_type"] = type(exc).__name__
