@@ -41,6 +41,27 @@ Smoke test:
     curl https://<your-domain>/openai-<random>/v1/models \
       -H "Authorization: Bearer $OPENAI_API_KEY"
 
+### opencode
+
+Add to `~/.config/opencode/opencode.json` (or `opencode.json` in a project root):
+
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "provider": {
+        "openai": {
+          "options": {
+            "baseURL": "https://<your-domain>/openai-<random>/v1",
+            "apiKey": "{env:OPENAI_API_KEY}"
+          }
+        }
+      }
+    }
+
+Export `OPENAI_API_KEY` in your shell (or run `opencode auth login`). This works with
+API keys only; ChatGPT account login uses a different endpoint the proxy does not cover.
+`baseURL` must end in `/v1` with no trailing slash. If replies arrive all at once instead
+of streaming, nginx is buffering: add `gzip off;` to the location block.
+
 ## Tests
 
     venv/bin/pytest
