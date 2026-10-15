@@ -14,6 +14,8 @@ def upstream_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=gen())
     if request.url.path == "/v1/limited":
         return httpx.Response(429, json={"error": "rate"})
+    if request.url.path == "/v1/cookie":
+        return httpx.Response(200, headers={"set-cookie": "__cf_bm=abc; Path=/"}, json={})
     if request.url.path == "/v1/boom":
         raise httpx.ConnectError("down")
     return httpx.Response(200, json={"ok": True})
@@ -63,3 +65,26 @@ async def test_binary_body_forwarded_unchanged(client):
     blob = bytes(range(256)) * 100
     await client.post("/v1/audio/transcriptions", content=blob)
     assert seen["request"].content == blob
+
+
+async def test_upstream_cookies_not_shared_between_callers(client):
+    await client.get("/v1/cookie")
+    client.cookies.clear()  # a different caller: it holds no cookies of its own
+    await client.get("/v1/models")
+    assert "cookie" not in seen["request"].headers
+
+
+async def test_encoded_path_and_raw_query_forwarded_verbatim(client):
+    await client.get("/v1/files/ab%2Fc?flag&a=1&a=2&q=x+y")
+    assert seen["request"].url.raw_path == b"/v1/files/ab%2Fc?flag&a=1&a=2&q=x+y"
+
+
+async def test_bodiless_get_is_not_chunked(client):
+    await client.get("/v1/models")
+    assert "transfer-encoding" not in seen["request"].headers
+
+
+async def test_post_keeps_content_length_not_chunked(client):
+    await client.post("/v1/chat/completions", content=b'{"a":1}')
+    h = seen["request"].headers
+    assert h["content-length"] == "7" and "transfer-encoding" not in h
