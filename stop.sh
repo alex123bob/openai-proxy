@@ -1,3 +1,4 @@
 #!/bin/sh
-cd "$(dirname "$0")"
-[ -f proxy.pid ] && kill "$(cat proxy.pid)" && rm proxy.pid && echo stopped
+set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec python3 "$SCRIPT_DIR/manage.py" stop

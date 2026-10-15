@@ -5,3 +5,7 @@ __pycache__/
 .superpowers/
 proxy.log
 proxy.pid
+proxy.process.json
+proxy.process.json.tmp
+proxy.pid.tmp
+proxy.lock
