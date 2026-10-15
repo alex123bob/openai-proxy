@@ -31,11 +31,11 @@ including streaming (SSE) responses.
 
 ## Deployment
 - `Dockerfile` and `start.sh`/`stop.sh` modeled on PP-AI-Service.
-- `deploy/nginx.conf.example`: location block with an unguessable prefix
-  (e.g. `/openai-x7k2/`), `proxy_buffering off`, long `proxy_read_timeout`,
+- `deploy/nginx.conf.example`: location block at the readable path
+  `/openai-proxy/`, `proxy_buffering off`, long `proxy_read_timeout`,
   `proxy_http_version 1.1`, prefix stripped before reaching the proxy.
 - Risk: since any caller's key is accepted, the URL is an open relay for others'
-  keys (costs only bandwidth). Mitigated by the unguessable prefix.
+  keys (costs only bandwidth). Accepted by the owner; a token check can be added later.
 
 ## Layout
 - `app.py` – FastAPI app and forwarding logic

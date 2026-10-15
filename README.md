@@ -27,18 +27,20 @@ Or with Docker:
 
 ## nginx
 
-Copy `deploy/nginx.conf.example` into your HTTPS `server` block and replace
-`CHANGE-ME` with a long random string. Because the proxy accepts any caller's key,
-the unguessable prefix is what keeps strangers from using your server as a relay.
+Copy `deploy/nginx.conf.example` into your HTTPS `server` block. It serves the proxy
+at `/openai-proxy/`. Note that the proxy accepts any caller's OpenAI key, so anyone who
+finds that path can relay requests through your server (this costs you bandwidth, not
+money, and never exposes your key). If that becomes a problem, add an access token check
+or switch to an unguessable path.
 
 ## Client usage
 
-    export OPENAI_BASE_URL=https://<your-domain>/openai-<random>/v1
+    export OPENAI_BASE_URL=https://lijialab.com/openai-proxy/v1
     export OPENAI_API_KEY=sk-...
 
 Smoke test:
 
-    curl https://<your-domain>/openai-<random>/v1/models \
+    curl https://lijialab.com/openai-proxy/v1/models \
       -H "Authorization: Bearer $OPENAI_API_KEY"
 
 ### opencode
@@ -50,7 +52,7 @@ Add to `~/.config/opencode/opencode.json` (or `opencode.json` in a project root)
       "provider": {
         "openai": {
           "options": {
-            "baseURL": "https://<your-domain>/openai-<random>/v1",
+            "baseURL": "https://lijialab.com/openai-proxy/v1",
             "apiKey": "{env:OPENAI_API_KEY}"
           }
         }
